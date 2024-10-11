@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP Automation WebApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #logs {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SOP Automation WebApp</h1>
+    <button onclick="startTranscription()">Start Transcription</button>
+    <button onclick="captureScreenshot()">Capture Screenshot</button>
+    <button onclick="createDocument()">Create Document</button>
+    <div id="logs">
+        <h2>Logs:</h2>
+        <div id="log-entries"></div>
+    </div>
+
+    <script>
+        function startTranscription() {
+            fetch('/transcribe', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    const logEntry = document.createElement('p');
+                    logEntry.textContent = `Transcription: ${data.text}`;
+                    document.getElementById('log-entries').appendChild(logEntry);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function captureScreenshot() {
+            fetch('/screenshot', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    const logEntry = document.createElement('p');
+                    logEntry.textContent = `Screenshot saved at: ${data.image_path}`;
+                    document.getElementById('log-entries').appendChild(logEntry);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function createDocument() {
+            fetch('/create_document', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    const logEntry = document.createElement('p');
+                    logEntry.textContent = `Document created at: ${data.document_path}`;
+                    document.getElementById('log-entries').appendChild(logEntry);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
