@@ -95,3 +95,86 @@ if __name__ == "__main__":
     
     with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
+
+
+let eventSource = null;
+let fetchController = null;
+
+// Function to start the subscription with custom headers
+function startSSE() {
+    if (eventSource !== null) {
+        console.log("SSE connection is already open.");
+        return;
+    }
+
+    fetchController = new AbortController();
+    const signal = fetchController.signal;
+
+    // Make a Fetch request with custom headers
+    fetch('http://localhost:8080/subscribe', {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer YOUR_TOKEN_HERE',  // Add your custom headers here
+            'Custom-Header': 'YourCustomValue'
+        },
+        signal: signal
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.body.getReader();
+    }).then(reader => {
+        const decoder = new TextDecoder();
+        processStream(reader, decoder);
+    }).catch(error => {
+        console.error("SSE connection error:", error);
+        addMessage("SSE connection error. Check the console for more details.");
+        stopSSE(); // Stop the connection in case of error
+    });
+
+    console.log("SSE connection opened using Fetch API.");
+    addMessage("SSE connection opened using Fetch API.");
+}
+
+// Function to process the stream from the Fetch API
+function processStream(reader, decoder) {
+    reader.read().then(function processText({ done, value }) {
+        if (done) {
+            console.log("SSE connection closed by the server.");
+            addMessage("SSE connection closed by the server.");
+            stopSSE();
+            return;
+        }
+
+        // Decode and handle the chunk of data
+        const text = decoder.decode(value, { stream: true });
+        console.log("New message received:", text);
+        addMessage(text);
+
+        // Continue reading the stream
+        return reader.read().then(processText);
+    }).catch(error => {
+        console.error("Error while reading stream:", error);
+        addMessage("Error while reading stream.");
+        stopSSE();
+    });
+}
+
+// Function to stop the SSE connection
+function stopSSE() {
+    if (fetchController !== null) {
+        fetchController.abort();
+        fetchController = null;
+        console.log("SSE connection closed.");
+        addMessage("SSE connection closed.");
+    }
+}
+
+// Function to add a message to the messages div
+function addMessage(message) {
+    const messagesDiv = document.getElementById("messages");
+    const newMessage = document.createElement("p");
+    newMessage.textContent = message;
+    messagesDiv.appendChild(newMessage);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+}
